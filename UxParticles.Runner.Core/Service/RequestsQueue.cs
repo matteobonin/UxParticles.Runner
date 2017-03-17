@@ -6,10 +6,17 @@ namespace UxParticles.Runner.Core.Service
 {
     public class RequestsQueue
     {
-        private ConcurrentDictionary<Guid, RunRequest> requests = new ConcurrentDictionary<Guid, RunRequest>();
+        private readonly IAnalysisQueue analysisQueue;
+        private readonly ConcurrentDictionary<Guid, RunRequest> requests = new ConcurrentDictionary<Guid, RunRequest>();
 
-        private ConcurrentDictionary<IDependingJob, Entry> reverseRequests
+        private readonly ConcurrentDictionary<IDependingJob, Entry> reverseRequests
             = new ConcurrentDictionary<IDependingJob, Entry>();
+
+
+        public RequestsQueue(IAnalysisQueue analysisQueue)
+        {
+            this.analysisQueue = analysisQueue;
+        }
 
         internal class Entry
         {
@@ -21,14 +28,14 @@ namespace UxParticles.Runner.Core.Service
 
             public IDependingJob Job;
 
-            public bool Queued;
+            public int QueuedCount;
 
             public bool Done;
 
             public ConcurrentDictionary<Guid, RunRequest> RelatedRequests = new ConcurrentDictionary<Guid, RunRequest>();
         }
 
-        public enum RequestQueueResult																																								public enum RequestQueueResult
+        public enum RequestQueueResult																																								 
         {
             AlreadyInQueue = 0,
             AddedToQueue,
@@ -37,6 +44,8 @@ namespace UxParticles.Runner.Core.Service
 
         public RequestQueueResult AddRequest(RunRequest request)
         {
+            ValidateRequest(request);
+
             if (!requests.TryAdd(request.RequestGuid, request))
             {
                 // request existed, done!
@@ -60,18 +69,42 @@ namespace UxParticles.Runner.Core.Service
             return RequestQueueResult.AddedToQueue;
         }
 
+        private static void ValidateRequest(RunRequest request)
+        {
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
+            if (request.RequestGuid == Guid.Empty)
+            {
+                throw new InvalidOperationException("Request cannot have an empty GUID");
+            }
+
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+        }
+
         private void TryPushEntryToAnalysisQueue(Entry entry)
         {
-            if (entry.Queued)
+            var value = Interlocked.CompareExchange(ref entry.QueuedCount, 1, 0);
+            if (value != 0)
             {
                 return;
             }
 
-            Interlocked.CompareExchange(ref entry.Queued,
+            this.analysisQueue.Add(entry.Job);
         }
 
-        public int RequestCount { get { return requests.Count; } }
+        public bool ContainsRequest(Guid requestGuid)
+        {
+            return this.requests.ContainsKey(requestGuid);
+        }
 
-        public int JobCount { get { return reverseRequests.Count; } }
+        public int RequestCount => requests.Count;
+
+        public int JobCount => reverseRequests.Count;
     }
 }

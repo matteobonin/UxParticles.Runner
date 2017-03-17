@@ -11,7 +11,7 @@ namespace UxParticles.Runner.Core.Service
 
         public string RequestedBy { get; set; }
 
-        public IDependingJob JobToExecute { get; set; }
+        public IDependingJob JobToExecute { get; set; } = NullJob.Instance;
 
         /// <summary>
         /// Gets or sets a value indicating whether this <see cref="T:UxParticles.Runner.Core.RunningBatch"/> must force a run even if the Job has a status

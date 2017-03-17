@@ -33,12 +33,12 @@ namespace UxParticles.Runner.Core.Service
                         Exception = ex,
                         DateTime = DateTime.UtcNow,
 
-                    }
-                Status = RunnerExecutionStatus.Failed
+                    },
+                    Status = RunnerExecutionStatus.Failed
                 };
             }
 
-            this.dataAccess.UpdateRunnerState(request.JobToExecute, RunnerState.GetDone(request));
+            //this.dataAccess.UpdateRunnerState(request.JobToExecute, RunnerState.GetDone(request));
             return null;
         }
 

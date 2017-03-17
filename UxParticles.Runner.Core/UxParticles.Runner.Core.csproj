@@ -33,6 +33,7 @@
     <Compile Include="MyClass.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\DependecyAnalysisQueue.cs" />
+    <Compile Include="Service\IAnalysisQueue.cs" />
     <Compile Include="Service\IDependencyCrawler.cs" />
     <Compile Include="Service\IDependingJob.cs" />
     <Compile Include="Service\IRunner.cs" />
