@@ -1,8 +1,8 @@
-using System;
-using System.Threading.Tasks;
-
-namespace UxParticles.Runner.Core.Service
+namespace UxParticles.Runner.Core.Service.Runner
 {
+    using System;
+    using System.Threading.Tasks;
+
     public class Runner : IRunner
     {
         IRunnerDataAccess dataAccess;

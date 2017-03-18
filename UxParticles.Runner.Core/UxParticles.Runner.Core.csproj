@@ -32,14 +32,16 @@
   <ItemGroup>
     <Compile Include="MyClass.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Service\AnalysisQueue.cs" />
+    <Compile Include="Service\Bus\IMessageBus.cs" />
     <Compile Include="Service\DependecyAnalysisQueue.cs" />
     <Compile Include="Service\IAnalysisQueue.cs" />
     <Compile Include="Service\IDependencyCrawler.cs" />
     <Compile Include="Service\IDependingJob.cs" />
-    <Compile Include="Service\IRunner.cs" />
+    <Compile Include="Service\Runner\IRunner.cs" />
     <Compile Include="Service\IRunnerDataAccess.cs" />
     <Compile Include="Service\RequestsQueue.cs" />
-    <Compile Include="Service\Runner.cs" />
+    <Compile Include="Service\Runner\Runner.cs" />
     <Compile Include="Service\RunnerBase.cs" />
     <Compile Include="Service\RunnerExecutionStatus.cs" />
     <Compile Include="Service\RunnerState.cs" />

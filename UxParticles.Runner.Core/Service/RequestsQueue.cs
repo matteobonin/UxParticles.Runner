@@ -1,72 +1,65 @@
-using System;
-using System.Collections.Concurrent;
-using System.Threading;
-
 namespace UxParticles.Runner.Core.Service
 {
+    using System;
+    using System.Collections.Concurrent;
+    using System.Threading;
+
     public class RequestsQueue
     {
         private readonly IAnalysisQueue analysisQueue;
+
         private readonly ConcurrentDictionary<Guid, RunRequest> requests = new ConcurrentDictionary<Guid, RunRequest>();
 
-        private readonly ConcurrentDictionary<IDependingJob, Entry> reverseRequests
-            = new ConcurrentDictionary<IDependingJob, Entry>();
-
+        private readonly ConcurrentDictionary<IDependingJob, Entry> reverseRequests =
+            new ConcurrentDictionary<IDependingJob, Entry>();
 
         public RequestsQueue(IAnalysisQueue analysisQueue)
         {
             this.analysisQueue = analysisQueue;
         }
 
-        internal class Entry
+        public enum RequestQueueResult
         {
-            public Entry(RunRequest request)
-            {
-                this.Job = request.JobToExecute;
-                this.RelatedRequests.TryAdd(request.RequestGuid, request);
-            }
+            AlreadyInQueue = 0, 
 
-            public IDependingJob Job;
+            AddedToQueue, 
 
-            public int QueuedCount;
-
-            public bool Done;
-
-            public ConcurrentDictionary<Guid, RunRequest> RelatedRequests = new ConcurrentDictionary<Guid, RunRequest>();
-        }
-
-        public enum RequestQueueResult																																								 
-        {
-            AlreadyInQueue = 0,
-            AddedToQueue,
             Failed = 99
         }
+
+        public int JobCount => this.reverseRequests.Count;
+
+        public int RequestCount => this.requests.Count;
 
         public RequestQueueResult AddRequest(RunRequest request)
         {
             ValidateRequest(request);
 
-            if (!requests.TryAdd(request.RequestGuid, request))
+            if (!this.requests.TryAdd(request.RequestGuid, request))
             {
                 // request existed, done!
                 return RequestQueueResult.AlreadyInQueue;
             }
 
-
-            var addedEntry =
-                reverseRequests.AddOrUpdate(request.JobToExecute,
-                    (job) => new Entry(request),
-                    (job, existingEntry) =>
+            var addedEntry = this.reverseRequests.AddOrUpdate(
+                request.JobToExecute, 
+                job => new Entry(request), 
+                (job, existingEntry) =>
                     {
-                        existingEntry.RelatedRequests.AddOrUpdate(request.RequestGuid, (x) => request, (x, y) => request);
+                        existingEntry.RelatedRequests.AddOrUpdate(request.RequestGuid, x => request, (x, y) => request);
                         return existingEntry;
                     });
 
-            //now we push the request in a queue for analysis
+            // now we push the request in a queue for analysis
             this.TryPushEntryToAnalysisQueue(addedEntry);
 
             // successfully added
             return RequestQueueResult.AddedToQueue;
+        }
+
+        public bool ContainsRequest(Guid requestGuid)
+        {
+            return this.requests.ContainsKey(requestGuid);
         }
 
         private static void ValidateRequest(RunRequest request)
@@ -98,13 +91,21 @@ namespace UxParticles.Runner.Core.Service
             this.analysisQueue.Add(entry.Job);
         }
 
-        public bool ContainsRequest(Guid requestGuid)
+        internal class Entry
         {
-            return this.requests.ContainsKey(requestGuid);
+            public bool Done;
+
+            public IDependingJob Job;
+
+            public int QueuedCount;
+
+            public ConcurrentDictionary<Guid, RunRequest> RelatedRequests = new ConcurrentDictionary<Guid, RunRequest>();
+
+            public Entry(RunRequest request)
+            {
+                this.Job = request.JobToExecute;
+                this.RelatedRequests.TryAdd(request.RequestGuid, request);
+            }
         }
-
-        public int RequestCount => requests.Count;
-
-        public int JobCount => reverseRequests.Count;
     }
 }
