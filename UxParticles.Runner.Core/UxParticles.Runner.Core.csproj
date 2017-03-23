@@ -45,7 +45,7 @@
     <Compile Include="Service\IRunnerDataAccess.cs" />
     <Compile Include="Service\RequestsQueue.cs" />
     <Compile Include="Service\Dependency\IStaticJobDependencyMapper.cs" />
-    <Compile Include="Service\Dependency\StaticJobDependencyMapperBase.cs" />
+    <Compile Include="Service\Dependency\StaticDependencyMapperBase.cs" />
     <Compile Include="Service\Runner\RunnerExec.cs" />
     <Compile Include="Service\RunnerBase.cs" />
     <Compile Include="Service\RunnerExecutionStatus.cs" />

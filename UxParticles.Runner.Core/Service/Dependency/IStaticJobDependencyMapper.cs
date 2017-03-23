@@ -5,21 +5,21 @@ namespace UxParticles.Runner.Core.Service.Runner
 
     public interface IStaticJobDependencyMapper 
     {
-        IEnumerable<IDependingJob> MapFrom(IDependingJob parentJob);
+        IEnumerable<object> MapFrom(object parentJob);
 
         Type Destination { get; }
 
         Type Source { get; }
     }
 
-    public interface IStaticJobDependencyMapper<in TJobIn> : IStaticJobDependencyMapper where TJobIn : IDependingJob
+    public interface IStaticJobDependencyMapper<in TJobIn> : IStaticJobDependencyMapper where TJobIn : class
     {
-        IEnumerable<IDependingJob> MapFrom(TJobIn parentJob);
+        IEnumerable<object> MapFrom(TJobIn parentJob);
     }
 
     public interface IStaticJobDependencyMapper<in TJobIn, out TJobOut> : IStaticJobDependencyMapper<TJobIn>
-         where TJobIn : IDependingJob
-         where TJobOut : IDependingJob
+         where TJobIn : class
+         where TJobOut : class
     {
         IEnumerable<TJobOut> MapFrom(TJobIn parentJob);
     }
