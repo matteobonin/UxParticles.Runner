@@ -2,7 +2,9 @@
 
 namespace UxParticles.Runner.Core.Service
 {
-	public interface IDependencyCrawler
+    using UxParticles.Runner.Core.Service.Runner;
+
+    public interface IDependencyCrawler
 	{
 		void Prepare();
 

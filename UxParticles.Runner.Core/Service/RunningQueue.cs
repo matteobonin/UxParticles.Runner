@@ -1,5 +1,7 @@
 namespace UxParticles.Runner.Core.Service
 {
+    using UxParticles.Runner.Core.Service.Runner;
+
     /// <summary>
     /// We have entries that have no dependencies
     /// they always go on top of queue

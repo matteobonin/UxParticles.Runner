@@ -2,6 +2,8 @@ using System;
 
 namespace UxParticles.Runner.Core.Service
 {
+    using UxParticles.Runner.Core.Service.Runner;
+
     public class RunRequest
     {
         /// <summary>

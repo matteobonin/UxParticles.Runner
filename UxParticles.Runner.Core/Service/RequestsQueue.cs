@@ -4,6 +4,8 @@ namespace UxParticles.Runner.Core.Service
     using System.Collections.Concurrent;
     using System.Threading;
 
+    using UxParticles.Runner.Core.Service.Runner;
+
     public class RequestsQueue
     {
         private readonly IAnalysisQueue analysisQueue;

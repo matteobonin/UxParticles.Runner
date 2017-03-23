@@ -3,13 +3,13 @@ namespace UxParticles.Runner.Core.Service.Runner
     using System;
     using System.Threading.Tasks;
 
-    public class Runner : IRunner
+    public class RunnerExec : IRunnerExec
     {
         IRunnerDataAccess dataAccess;
 
         IDependencyCrawler dependencyCrawler;
 
-        public Runner(IRunnerDataAccess dataAccess, IDependencyCrawler dependencyCrawler)
+        public RunnerExec(IRunnerDataAccess dataAccess, IDependencyCrawler dependencyCrawler)
         {
             this.dataAccess = dataAccess;
             this.dependencyCrawler = dependencyCrawler;
