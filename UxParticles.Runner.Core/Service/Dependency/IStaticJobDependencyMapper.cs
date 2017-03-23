@@ -1,4 +1,4 @@
-namespace UxParticles.Runner.Core.Service.Runner
+namespace UxParticles.Runner.Core.Service.Dependency
 {
     using System;
     using System.Collections.Generic;
