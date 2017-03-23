@@ -18,7 +18,7 @@ namespace UxParticles.Runner.Core.Service.Runner
     }
 
     public interface IStaticJobDependencyMapper<in TJobIn, out TJobOut> : IStaticJobDependencyMapper<TJobIn>
-        where TJobIn : IDependingJob
+         where TJobIn : IDependingJob
          where TJobOut : IDependingJob
     {
         IEnumerable<TJobOut> MapFrom(TJobIn parentJob);
