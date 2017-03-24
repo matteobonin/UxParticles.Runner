@@ -35,7 +35,7 @@
     <Compile Include="Service\AnalysisQueue.cs" />
     <Compile Include="Service\Bus\IMessageBus.cs" />
     <Compile Include="Service\DependecyAnalysisQueue.cs" />
-    <Compile Include="Service\Dependency\IDependencyFinderService.cs" />
+    <Compile Include="Service\Dependency\IStaticDependencyFinderService.cs" />
     <Compile Include="Service\IAnalysisQueue.cs" />
     <Compile Include="Service\IDependencyCrawler.cs" />
     <Compile Include="Service\Runner\DependingJobBase.cs" />
