@@ -21,24 +21,12 @@
             public string Result { get; set; }
         }
 
-        public class StaticDependencyMapperBaseTestClass : StaticDependencyMapperBase<TestArgs1, TestArgs2>
+        public class StaticDependencyMapperBaseTestClass : StaticDependencyMapperBaseTestClassBase<TestArgs1, TestArgs2>
         {
-            private readonly Func<IEnumerable<TestArgs2>> resultList;
 
             public StaticDependencyMapperBaseTestClass(Func<IEnumerable<TestArgs2>> resultList)
-                : this()
+                : base(resultList)
             {
-                this.resultList = resultList;
-            }
-
-            private StaticDependencyMapperBaseTestClass()
-                : base(StaticMapperOptions.ThrowOnNullArguments | StaticMapperOptions.ThrowOnNullResult)
-            {
-            }
-
-            protected override IEnumerable<TestArgs2> OnMapFromInputArguments(TestArgs1 parentJob)
-            {
-                return this.resultList();
             }
         }
 

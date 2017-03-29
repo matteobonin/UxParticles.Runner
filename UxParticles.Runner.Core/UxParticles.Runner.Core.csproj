@@ -35,6 +35,7 @@
     <Compile Include="Service\AnalysisQueue.cs" />
     <Compile Include="Service\Bus\IMessageBus.cs" />
     <Compile Include="Service\DependecyAnalysisQueue.cs" />
+    <Compile Include="Service\Dependency\Exception\StaticCircularDependencyException.cs" />
     <Compile Include="Service\Dependency\IStaticDependencyFinderService.cs" />
     <Compile Include="Service\IAnalysisQueue.cs" />
     <Compile Include="Service\IDependencyCrawler.cs" />
