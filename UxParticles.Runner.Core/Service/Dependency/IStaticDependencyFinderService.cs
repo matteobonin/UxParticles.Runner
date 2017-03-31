@@ -59,31 +59,34 @@ namespace UxParticles.Runner.Core.Service.Dependency
             {
                 yield return
                     new ValidationResult()
-                    {
-                        IsValidated = false,
-                        Message = "Cannot have null mapper",
-                        Exception = new ArgumentNullException(nameof(jobToValidate))
-                    };
+                        {
+                            IsValidated = false,
+                            Message = "Cannot have null mapper",
+                            Exception = new ArgumentNullException(nameof(jobToValidate))
+                        };
 
                 yield break;
             }
 
-            var circularDependencyMappers = this.FindCircularDependencies(jobToValidate);
-            foreach (var circularDependencyMapper in circularDependencyMappers)
-            {
-                yield return circularDependencyMapper;
-            }
+            var circularDependencyMapper = this.FindCircularDependencies(jobToValidate);
+            yield return circularDependencyMapper;
         }
 
         public void AddStaticDependencyMapper(IStaticJobDependencyMapper mapper)
         {
-            this.ThrowIfRunnerIsNotValidated(mapper);
+            if (mapper == null)
+            {
+                throw new ArgumentNullException(nameof(mapper));
+            }
 
-            this.EnsureRemoveRunnerMapperFromListOfUnknowns(mapper);
-            this.EnsurePrerequisitesAreDiscovered(mapper);
             this.EnsureMapperIsKnown(mapper);
+            this.EnsureRemoveRunnerMapperFromListOfUnknowns(mapper);
 
+            this.EnsurePrerequisitesAreDiscovered(mapper);
+            
             this.AppendToReverseDependencies(mapper);
+
+            this.ThrowIfRunnerIsNotValidated(mapper);
         }
 
         public IEnumerable<Type> KnownJobTypes
@@ -112,7 +115,7 @@ namespace UxParticles.Runner.Core.Service.Dependency
             {
                 mappers = new List<IStaticJobDependencyMapper>();
                 this.mappersByType.Add(mapperType, mappers);
-            }
+            }            
 
             mappers.Add(mapper);
         }
@@ -142,18 +145,11 @@ namespace UxParticles.Runner.Core.Service.Dependency
 
             ICollection<IStaticJobDependencyMapper> dependencies;
 
-            if (this.reverseDependencies.TryGetValue(destinationType, out dependencies))
-            {
-                // dependency is now aware of this
-                dependencies.Add(mapper);
-            }
-            else
+            if (!this.mappersByType.TryGetValue(destinationType, out dependencies))            
             {
                 // never heard of destination type, we park it here
-                this.unknownDependencies.Add(
-                    new UnknownDependency { Requested = destinationType, Requestor = mapper.Source });
+                this.unknownDependencies.Add(new UnknownDependency { Requested = destinationType, Requestor = mapper.Source });
             }
-
         }
 
 
@@ -176,62 +172,59 @@ namespace UxParticles.Runner.Core.Service.Dependency
         {
             var destinationType = mapper.Destination;
             ICollection<IStaticJobDependencyMapper> mappers;
-            if (!this.mappersByType.TryGetValue(destinationType, out mappers))
+
+            if (!this.reverseDependencies.TryGetValue(destinationType, out mappers))
             {
                 mappers = new List<IStaticJobDependencyMapper>();
-                this.mappersByType.Add(destinationType, mappers);
+                this.reverseDependencies.Add(destinationType, mappers);
             }
 
             mappers.Add(mapper);
         }
 
-        private IEnumerable<ValidationResult> FindCircularDependencies(IStaticJobDependencyMapper mapper)
+        private ValidationResult FindCircularDependencies(IStaticJobDependencyMapper mapper)
         {
-            // to find a dependency that is circular, 
+            // to find a dependency that is circular, we need to explore the graph
+            // a mapper can be structured this way:
+            //   A-+->B
+            //     +->C--+->D
+            //           +->E
             // we can start by any dependency
-            var parentTypes = new HashSet<Type>() { mapper.Source };
-            yield return this.FindCircularDependencies(mapper.Destination, parentTypes);
+            // 1)                       
+            return this.FindCircularDependenciesRec(mapper, new HashSet<Type>());
         }
 
-        private ValidationResult FindCircularDependencies(Type typeToLookFor, HashSet<Type> parentTypes)
+        private ValidationResult FindCircularDependenciesRec(IStaticJobDependencyMapper mapper, ISet<Type> typesExplored)
         {
-            if (parentTypes.Contains(typeToLookFor))
+            var typeToLookFor = mapper.Source;
+            if (typesExplored.Contains(typeToLookFor))
             {
-                var message =
-                    $"A circular dependency has been spotted because the requested type {typeToLookFor} is already present in the chain";
-                
-                Debug.WriteLine(message);
-
-                return new ValidationResult()
-                           {
-                               IsValidated = false,
-                               Message = message,
-                               Exception = new StaticCircularDependencyException()
-                           };
+                return new ValidationResult { IsValidated = false, Exception = new StaticCircularDependencyException() };
             }
 
-            parentTypes.Add(typeToLookFor);
+            typesExplored.Add(typeToLookFor);
 
-            // look into children
-            ICollection<IStaticJobDependencyMapper> mappers;
-            if (this.mappersByType.TryGetValue(typeToLookFor, out mappers))
+            var mapperDependency = mapper.Destination;
+            ICollection<IStaticJobDependencyMapper> dependencies;
+            if (this.mappersByType.TryGetValue(mapperDependency, out dependencies))
             {
-                foreach (var mapper in mappers)
+                foreach (var dependentMapper in dependencies)
                 {
-                    var validation = this.FindCircularDependencies(mapper.Destination, parentTypes);
-                    if (validation.IsValidated.HasValue && validation.IsValidated.Value == false)
+                    var childResult = this.FindCircularDependenciesRec(dependentMapper, typesExplored);
+                    if (childResult.IsValidated.HasValue && !childResult.IsValidated.Value)
                     {
-                        return validation;
+                        // close recursion
+                        return childResult;
                     }
                 }
             }
-
-            return new ValidationResult()
+            else
             {
-                IsValidated = true,
-                Message = $"source type {typeToLookFor} has no circular dependencies"
-            };
+                Console.WriteLine($"   Mapper > {mapper.Destination.Name}=>no dependencies?");
+            }
 
+            typesExplored.Remove(typeToLookFor);
+            return new ValidationResult { IsValidated = true };
         }
     }
 }

@@ -11,16 +11,6 @@
     [TestFixture]
     public class StaticJobDependencyMapperBaseTest
     {
-        public class TestArgs1
-        {
-            public string Mapping { get; set; }
-        }
-
-        public class TestArgs2
-        {
-            public string Result { get; set; }
-        }
-
         public class StaticDependencyMapperBaseTestClass : StaticDependencyMapperBaseTestClassBase<TestArgs1, TestArgs2>
         {
 
