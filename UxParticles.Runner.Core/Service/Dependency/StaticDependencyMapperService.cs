@@ -6,49 +6,27 @@
 
     using UxParticles.Runner.Core.Service.Dependency.Exception;
 
-    public interface IStaticDependencyFinderService
-    {
-        void AddStaticDependencyMapper(IStaticJobDependencyMapper mapper);
-
-        IEnumerable<Type> MappedTypes { get; }
-
-        IEnumerable<Type> UnmappedTypes { get; }
-
-        
-    }
-
-    public class ValidationResult
-    {
-        public System.Exception Exception { get; set; }
-
-        public bool? IsValidated { get; set; }
-
-        public string Message { get; set; }
-    }
-
-    public class StaticDependencyFinderService : IStaticDependencyFinderService
+    public class StaticDependencyMapperService : IStaticDependencyMapperService
     {
         private List<IStaticJobDependencyMapper> knownJobs = new List<IStaticJobDependencyMapper>();
 
         /// <summary>
         ///     Given a type all the mappers into a diffrent type
         /// </summary>
-        private Dictionary<Type, ICollection<IStaticJobDependencyMapper>> mappersByType =
-            new Dictionary<Type, ICollection<IStaticJobDependencyMapper>>();
+        private Dictionary<Type, ICollection<IStaticJobDependencyMapper>> mappersByType = new Dictionary<Type, ICollection<IStaticJobDependencyMapper>>();
 
-        private Dictionary<Type, ICollection<Type>> requestorsByRequestedType =
-            new Dictionary<Type, ICollection<Type>>();
+        private Dictionary<Type, ICollection<Type>> requestorsByRequestedType = new Dictionary<Type, ICollection<Type>>();
 
         /// <summary>
         ///     This is the reverse set, ie all the types this type depend on. so the key is required by all the reverse mappers
         /// </summary>
-        private Dictionary<Type, ICollection<IStaticJobDependencyMapper>> reverseDependencies =
-            new Dictionary<Type, ICollection<IStaticJobDependencyMapper>>();
+        private Dictionary<Type, ICollection<IStaticJobDependencyMapper>> reverseDependencies = new Dictionary<Type, ICollection<IStaticJobDependencyMapper>>();
 
         public IEnumerable<Type> MappedTypes => this.mappersByType.Keys.ToList();
 
         public IEnumerable<Type> UnmappedTypes => this.requestorsByRequestedType.Keys.ToList();
 
+        /// <exception cref="ArgumentNullException"><paramref name="mapper"/> is <see langword="null"/></exception>
         public void AddStaticDependencyMapper(IStaticJobDependencyMapper mapper)
         {
             if (mapper == null)
@@ -57,6 +35,7 @@
             }
 
             this.EnsureMapperIsKnown(mapper);
+
             this.EnsureRemoveRunnerMapperFromListOfUnknowns(mapper);
 
             this.EnsurePrerequisitesAreDiscovered(mapper);

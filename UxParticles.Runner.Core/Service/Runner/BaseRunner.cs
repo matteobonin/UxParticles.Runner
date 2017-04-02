@@ -6,61 +6,9 @@ using System.Threading.Tasks;
 
 namespace UxParticles.Runner.Core.Service.Runner
 {
-    using System.Security.Cryptography.X509Certificates;
-
     using UxParticles.Runner.Core.Service.Dependency;
+    using UxParticles.Runner.Core.Service.Runner.Enum;
 
-    public enum RunnerStatus
-    {
-        Ready,
-        Awaiting,
-        Running,
-    }
-
-    public enum RunningMode
-    {
-        DoNotForce,
-        ForceRunnerOnly,
-        ForceDependendentsAndRunner,
-        InvalidateOnly
-    }
-
-    public class RunningPeriod
-    {
-        
-    }
-
-    public class RunnerCompletedEvent { }
-
-    public class DependencyBrokerResponse
-    {
-        bool IsSuccessful { get; set; }
-
-
-    }
-
-    public interface IHandle<in T> 
-    {
-        void Handle(T @event);
-    }
-
-    public interface IDependencyBroker : IHandle<RunnerCompletedEvent>
-    {
-        bool QueueDependencyRequests(RunningRequest request, IEnumerable<object> dependencies);
-
-        bool QueueRequest(RunningRequest request);
-    }
-
-    public class RunningRequest
-    {
-        public object Args { get; set; }
-
-        public RunningPeriod Period { get; set; }
-
-        public RunningMode Mode { get; set; } = RunningMode.DoNotForce;
-    }
-
-    
     public class BaseRunner<TArgs> where TArgs : class
     {
         private readonly List<IStaticJobDependencyMapper<TArgs>> staticMappers;
@@ -68,10 +16,7 @@ namespace UxParticles.Runner.Core.Service.Runner
         private readonly IDependencyBroker dependencyBroker;
 
         private readonly IRunnerDataAccess runnerDataAccess;
-
-        public RunnerStatus Status { get; private set; }
-
-
+        
         public BaseRunner(
             IEnumerable<IStaticJobDependencyMapper<TArgs>> staticMappers,
             IDependencyBroker dependencyBroker,
@@ -83,7 +28,7 @@ namespace UxParticles.Runner.Core.Service.Runner
         }
 
         /// <exception cref="ArgumentNullException"><paramref name="request"/> is <see langword="null"/></exception>
-        public  void Run(RunningRequest request)
+        public RunnerOutcome Run(RunningRequest request)
         {
             if (request == null)
             {
@@ -95,13 +40,23 @@ namespace UxParticles.Runner.Core.Service.Runner
                 throw new ArgumentNullException(nameof(request.Args));
             }
 
-            this.UpdateRunnerStatus(request);
-
-            if (!this.RequestDependencies(request))
+            var outcome = this.EnsureCanBeginRunnerOperations(request);
+            if (outcome.HasValue)
             {
-                return;
+                return outcome.Value;                
             }
 
+            outcome = this.EnsureDependenciesAreSatisfied(request);
+            if (outcome.HasValue)
+            {
+                return outcome.Value;
+            }
+
+            return this.ExecuteRunnerOperations(request);
+        }
+
+        private RunnerOutcome ExecuteRunnerOperations(RunningRequest request)
+        {
             Exception exception = null;
             try
             {
@@ -112,12 +67,23 @@ namespace UxParticles.Runner.Core.Service.Runner
                 exception = ex;
             }
 
-            this.UpdateFinalRunnerStatus(request, exception);
+            return this.EndRunnerOperations(request, exception);
         }
 
-        private void UpdateFinalRunnerStatus(RunningRequest request, Exception exception)
+        private RunnerOutcome EndRunnerOperations(RunningRequest request, Exception exception)
         {
-             
+            RunnerStatus status = exception == null ? RunnerStatus.Success : RunnerStatus.Error;
+
+            this.runnerDataAccess.UpdateRunnerState(request, status, exception);
+
+            if (status == RunnerStatus.Error)
+            {
+                return RunnerOutcome.Error;
+            }
+            else
+            {
+                return RunnerOutcome.Completed;
+            }
         }
 
         private void OnExecuteRun(RunningRequest request)
@@ -125,21 +91,48 @@ namespace UxParticles.Runner.Core.Service.Runner
           
         }
 
-        private void UpdateRunnerStatus(RunningRequest request)
+        private RunnerOutcome? EnsureCanBeginRunnerOperations(RunningRequest request)
         {
+            var currentrunnerStatus = this.runnerDataAccess.GetRunnerStatus(request);
+            if (currentrunnerStatus == RunnerStatus.Running)
+            {
+                return RunnerOutcome.AlreadyRunning;
+            }
+
+            if (request.Mode == RunningMode.InvalidateOnly)
+            {
+                this.runnerDataAccess.UpdateRunnerState(request, RunnerStatus.Invalidated, null);
+                return RunnerOutcome.InvalidatedOnly;
+            }
+
+            if (currentrunnerStatus == RunnerStatus.Success)
+            {
+                if (request.Mode != RunningMode.ForceDependendentsAndRunner
+                    && request.Mode != RunningMode.ForceRunnerOnly)
+                {
+                    return RunnerOutcome.AlreadyCompleted;
+                }
+            }
+            
+            this.runnerDataAccess.UpdateRunnerState(request, RunnerStatus.Running, null);
+            return null;
         }
 
-        private bool RequestDependencies(RunningRequest request)
+        private RunnerOutcome? EnsureDependenciesAreSatisfied(RunningRequest request)
         {
             var requestArgs = request.Args;
             var dependencies = this.staticMappers.SelectMany(x => x.MapFrom(requestArgs)).ToList();
             if (dependencies.Count == 0)
             {
-                return true;
+                return null;
             }
 
-           return this.dependencyBroker.QueueDependencyRequests(request, dependencies);
+            if (!this.dependencyBroker.QueueDependencyRequests(request, dependencies))
+            {
+                return null;
+            }
+
+            return RunnerOutcome.Awaiting;
         }
- 
     }
 }
