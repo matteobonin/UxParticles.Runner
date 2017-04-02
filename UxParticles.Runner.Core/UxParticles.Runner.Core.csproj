@@ -34,11 +34,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\AnalysisQueue.cs" />
     <Compile Include="Service\Bus\IMessageBus.cs" />
+    <Compile Include="Service\Compare\ArgsComparerBase.cs" />
     <Compile Include="Service\DependecyAnalysisQueue.cs" />
     <Compile Include="Service\Dependency\Exception\StaticCircularDependencyException.cs" />
     <Compile Include="Service\Dependency\IStaticDependencyFinderService.cs" />
     <Compile Include="Service\IAnalysisQueue.cs" />
     <Compile Include="Service\IDependencyCrawler.cs" />
+    <Compile Include="Service\Runner\BaseRunner.cs" />
     <Compile Include="Service\Runner\DependingJobBase.cs" />
     <Compile Include="Service\Runner\IDependingJob.cs" />
     <Compile Include="Service\Dependency\IJobDependencyFinder.cs" />
