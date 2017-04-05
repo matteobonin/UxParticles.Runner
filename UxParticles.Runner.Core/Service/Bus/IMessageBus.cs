@@ -10,7 +10,11 @@ namespace UxParticles.Runner.Core.Service.Bus
     {
         
     }
+
     public interface IMessageBus
     {
+        TResult Request<TResult>(IMessage<TResult> message);
+
+        void Publish(object @event);
     }
 }

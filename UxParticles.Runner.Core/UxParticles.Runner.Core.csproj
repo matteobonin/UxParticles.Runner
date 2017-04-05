@@ -45,10 +45,11 @@
     <Compile Include="Service\Dependency\ValidationResult.cs" />
     <Compile Include="Service\IAnalysisQueue.cs" />
     <Compile Include="Service\IDependencyCrawler.cs" />
+    <Compile Include="Service\Queue\ConcurrentOneToMany.cs" />
     <Compile Include="Service\Runner\BaseRunner.cs" />
-    <Compile Include="Service\Runner\DependencyBrokerResponse.cs" />
-    <Compile Include="Service\Runner\IDependencyBroker.cs" />
-    <Compile Include="Service\Runner\IHandle.cs" />
+    <Compile Include="Service\Broker\DependencyBrokerResponse.cs" />
+    <Compile Include="Service\Broker\IDependencyBroker.cs" />
+    <Compile Include="Service\Bus\IHandle.cs" />
     <Compile Include="Service\Runner\Events\RunnerCompletedEvent.cs" />
     <Compile Include="Service\Runner\RunningPeriod.cs" />
     <Compile Include="Service\Runner\RunningRequest.cs" />

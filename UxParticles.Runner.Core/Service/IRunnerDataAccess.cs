@@ -19,5 +19,6 @@ namespace UxParticles.Runner.Core.Service
         bool IsRunning(RunningRequest request);
 
         RunnerStatus GetRunnerStatus(RunningRequest request);
-    }
+
+     }
 }
