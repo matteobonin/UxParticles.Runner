@@ -1,31 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace UxParticles.Runner.Core.Service.Queue
+﻿namespace UxParticles.Runner.Core.Service.Queue
 {
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
 
     /// <summary>
-    /// With this we cover the scenario where the 
+    ///     With this we cover the scenario where the
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     public class ConcurrentOneToMany<TKey, TElements>
     {
-        private ConcurrentDictionary<TKey, ConcurrentDictionary<TElements, byte>> underlyingList = new ConcurrentDictionary<TKey, ConcurrentDictionary<TElements, byte>>();
-         
+        private readonly ConcurrentDictionary<TKey, ConcurrentDictionary<TElements, byte>> underlyingList =
+            new ConcurrentDictionary<TKey, ConcurrentDictionary<TElements, byte>>();
+
+        /// <summary>
+        /// Gets the total number of keys in the set
+        /// </summary>
+        public int Count => this.underlyingList.Count;
+
+
         public void AddOrUpdate(TKey key, TElements other)
         {
             this.underlyingList.AddOrUpdate(
-                key,
+                key, 
                 k =>
                     {
                         var d = new ConcurrentDictionary<TElements, byte>();
                         d.AddOrUpdate(other, x => new byte(), (x, y) => new byte());
                         return d;
-                    },
+                    }, 
                 (k, set) =>
                     {
                         set.AddOrUpdate(other, x => new byte(), (x, y) => new byte());
@@ -33,15 +35,11 @@ namespace UxParticles.Runner.Core.Service.Queue
                     });
         }
 
-        public void RemoveElementFrom(TKey key, TElements other)
-        {
-            var relatedSet = underlyingList.GetOrAdd(key, new ConcurrentDictionary<TElements, byte>());
-            byte removedEntry;
-            relatedSet.TryRemove(other, out removedEntry);
-        }
-
-        public int Count => this.underlyingList.Count;
-
+        /// <summary>
+        /// Gets the total number of uniqe items per key
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns>0 if the key does not exist, the number of items in the set otherwise</returns>
         public int CountByKey(TKey key)
         {
             ConcurrentDictionary<TElements, byte> value;
@@ -51,6 +49,14 @@ namespace UxParticles.Runner.Core.Service.Queue
             }
 
             return value.Count;
+        }
+
+
+        public void RemoveElementFrom(TKey key, TElements other)
+        {
+            var relatedSet = this.underlyingList.GetOrAdd(key, new ConcurrentDictionary<TElements, byte>());
+            byte removedEntry;
+            relatedSet.TryRemove(other, out removedEntry);
         }
     }
 }
